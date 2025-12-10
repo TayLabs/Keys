@@ -1,0 +1,50 @@
+{
+	"name": "taylabs-keys",
+	"version": "1.0.0",
+	"description": "",
+	"main": "src/server.ts",
+	"scripts": {
+		"dev": "cross-env NODE_ENV=development tsx src/server.ts",
+		"watch": "cross-env NODE_ENV=development tsx watch --include \"./src/**/*\" src/server.ts",
+		"db:init": "npx drizzle-kit generate && npx drizzle-kit migrate",
+		"docker:up": "docker compose --profile development up -d",
+		"docker:start": "docker compose --profile development start",
+		"docker:stop": "docker compose --profile development stop",
+		"docker:down": "docker compose --profile development down",
+		"docker:build": "docker build -t taylabs-keys .",
+		"build": "tsc && tsc-alias",
+		"start": "node dist/server.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.22.0",
+	"devDependencies": {
+		"@types/body-parser": "^1.19.6",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/node": "^24.10.2",
+		"@types/pg": "^8.15.6",
+		"cross-env": "^10.1.0",
+		"drizzle-kit": "^0.31.8",
+		"tsc-alias": "^1.8.16",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"@taylabs-auth-sdk/express": "github:TayLabs/Auth_Express",
+		"argon2": "^0.44.0",
+		"body-parser": "^2.2.1",
+		"cors": "^2.8.5",
+		"dotenv": "^17.2.3",
+		"drizzle-orm": "^0.45.0",
+		"express": "^5.2.1",
+		"express-rate-limit": "^8.2.1",
+		"helmet": "^8.1.0",
+		"ioredis": "^5.8.2",
+		"pg": "^8.16.3",
+		"rate-limit-redis": "^4.3.1",
+		"winston": "^3.19.0",
+		"zod": "^4.1.13"
+	}
+}

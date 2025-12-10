@@ -1,0 +1,20 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Github files
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Testing and documentation
+tests/
+coverage/
+docs/
+
+# Build outputs
+dist/
+build/
