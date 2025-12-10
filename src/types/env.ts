@@ -26,17 +26,6 @@ const envSchema = z.object({
 		.default('7313')
 		.transform(Number),
 	DATABASE_URL: z.url('Must be a valid url for the database'),
-	REDIS_URI: z
-		.string('Must include Redis connection string (Format: "[ipaddr]:[port]")')
-		.regex(/\b[\w.-]+:(\d{1,5})\b/, 'Invalid format, use "[host]:[port]"')
-		.transform((str) => {
-			const [host, port] = str.split(':');
-
-			return {
-				HOST: host,
-				PORT: parseInt(port),
-			};
-		}),
 	SERVICE_NAME: z.string().default('keys'),
 	ACCESS_TOKEN_SECRET: z
 		.string('Must be a valid string of characters')

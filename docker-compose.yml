@@ -1,85 +1,40 @@
-name: ${CONTAINER_PREFIX:-taylab}-auth-services
+name: ${CONTAINER_PREFIX:-taylab}-keys-services
 
 services:
   postgres:
     image: postgres:latest
-    container_name: ${CONTAINER_PREFIX:-taylab-auth}-postgres
+    container_name: ${CONTAINER_PREFIX:-taylab-keys}-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: auth
-      POSTGRES_USER: tayLabAuth
+      POSTGRES_DB: keys
+      POSTGRES_USER: tayLabKeys
       POSTGRES_PASSWORD: hvpoawev0wqh-sabipegpa!
     ports:
-      - '5313:5432'
+      - '5212:5432'
     volumes:
       - postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U tayLabAuth -d auth']
+      test: ['CMD-SHELL', 'pg_isready -U tayLabKeys -d keys']
       interval: 10s
       timeout: 5s
       retries: 5
     profiles: ['development', 'production', 'test']
 
-  redis:
-    image: redis:latest
-    container_name: ${CONTAINER_PREFIX:-taylab-auth}-redis
-    restart: unless-stopped
-    ports:
-      - '6313:6379'
-    volumes:
-      - redis:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    profiles: ['development', 'production', 'test']
-
-  taylab-mail:
-    image: taylabs-mail # If the compose fails, be sure to clone this repo and run the docker:build script beforehand
-    container_name: ${CONTAINER_PREFIX:-taylab-auth}-mail
-    restart: unless-stopped
-    environment:
-      API_KEY: ${MAIL_API_KEY} # Set with export MAIL_API_KEY=value (setx for powershell)
-      MAILTRAP_API_KEY: ${MAILTRAP_API_KEY} # Set with export MAILTRAP_API_KEY=value (setx for powershell)
-    ports:
-      - '7212:7212'
-    healthcheck:
-      test: ['CMD-SHELL', 'curl -I http://localhost:7212']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    profiles: ['development', 'production', 'test']
-
-  taylab-auth:
+  taylab-keys:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ${CONTAINER_PREFIX:-taylab-auth}-api
+    container_name: ${CONTAINER_PREFIX:-taylab-key}-api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://tayLabAuth:hvpoawev0wqh-sabipegpa!@postgres:5432/auth
-      REDIS_URI: redis:6313
-      MAIL_API: taylab-mail:7212
-      MAIL_API_KEY: ${MAIL_API_KEY} # Set with export MAIL_API_KEY=value (setx for powershell)
-      ACCESS_TOKEN_SECRET:
-      REFRESH_TOKEN_SECRET:
-      TOTP_ENCRYPT_KEY:
-      RESET_TOKEN_HASH_KEY:
-      EMAIL_VERIFICATION_SECRET:
-      FRONTEND_URL: http://localhost:3000
+      DATABASE_URL: postgres://tayLabKeys:hvpoawev0wqh-sabipegpa!@postgres:5432/keys
+      ACCESS_TOKEN_SECRET: aonv53t4oah2423nlntzheu
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-      taylab-mail:
-        condition: service_healthy
     ports:
-      - '7313:7313'
+      - '7212:7212'
     profiles: ['production']
 
 volumes:
   postgres:
-  redis:
-  mail:
