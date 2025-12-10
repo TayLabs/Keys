@@ -23,7 +23,7 @@ const envSchema = z.object({
 	PORT: z
 		.string()
 		.regex(/^\d+$/, 'Not a valid number')
-		.default('7313')
+		.default('7212')
 		.transform(Number),
 	DATABASE_URL: z.url('Must be a valid url for the database'),
 	SERVICE_NAME: z.string().default('keys'),
