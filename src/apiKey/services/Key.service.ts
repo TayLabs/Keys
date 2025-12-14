@@ -26,6 +26,7 @@ export default class Key {
 			await db
 				.insert(keyTable)
 				.values({
+					// TODO: get serviceId based on name or change param to Id
 					keyHash,
 					keyLastFour: key.substring(key.length - 4),
 					expiresAt: new Date(
