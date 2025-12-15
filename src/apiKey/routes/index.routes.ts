@@ -3,6 +3,6 @@ import keyRouter from './key.routes';
 
 const apiKeyRouter = Router();
 
-apiKeyRouter.use('/services/:serviceName/keys', keyRouter);
+apiKeyRouter.use('/services/:serviceId/keys', keyRouter);
 
 export { apiKeyRouter };

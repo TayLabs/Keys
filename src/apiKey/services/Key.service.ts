@@ -9,9 +9,11 @@ import parseTTL from '@/apiKey/utils/parseTTL.utils';
 import env from '@/types/env';
 
 export default class Key {
+	private _serviceId: UUID;
 	private _keyId?: UUID;
 
-	constructor(keyId?: UUID) {
+	constructor(serviceId: UUID, keyId?: UUID) {
+		this._serviceId = serviceId;
 		this._keyId = keyId;
 	}
 
@@ -26,7 +28,7 @@ export default class Key {
 			await db
 				.insert(keyTable)
 				.values({
-					// TODO: get serviceId based on name or change param to Id
+					serviceId: this._serviceId,
 					keyHash,
 					keyLastFour: key.substring(key.length - 4),
 					expiresAt: new Date(

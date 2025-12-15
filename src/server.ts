@@ -2,10 +2,12 @@ import env from './types/env';
 import app from './app';
 import runMigrations from './config/db/utils/runMigrations';
 import { pool } from './config/db';
+import seed from './config/db/seed';
 
 async function startServer() {
 	try {
 		await runMigrations();
+		await seed();
 
 		const port = env.PORT || 7212;
 		const server = app.listen(port, () => {

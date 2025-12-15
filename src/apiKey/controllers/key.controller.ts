@@ -12,7 +12,7 @@ import AppError from '@/types/AppError';
 
 export const create = controller<undefined, CreateResBody, CreateReqParams>(
 	async (req, res, _next) => {
-		const { key, keyRecord } = await new Key().create();
+		const { key, keyRecord } = await new Key(req.params.serviceId).create();
 
 		res.status(HttpStatus.OK).json({
 			success: true,
@@ -26,7 +26,7 @@ export const create = controller<undefined, CreateResBody, CreateReqParams>(
 
 export const verify = controller<VerifyReqBody, VerifyResBody, VerifyReqParams>(
 	async (req, res, _next) => {
-		if (!(await new Key().verify(req.body.key))) {
+		if (!(await new Key(req.params.serviceId).verify(req.body.key))) {
 			throw new AppError('Invalid Api Key', HttpStatus.UNAUTHORIZED);
 		}
 
@@ -39,7 +39,7 @@ export const verify = controller<VerifyReqBody, VerifyResBody, VerifyReqParams>(
 
 export const remove = controller<undefined, RemoveResBody, RemoveReqParams>(
 	async (req, res, _next) => {
-		const key = await new Key(req.params.keyId).remove();
+		const key = await new Key(req.params.serviceId, req.params.keyId).remove();
 
 		res.status(HttpStatus.OK).json({
 			success: true,
