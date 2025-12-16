@@ -60,13 +60,15 @@ export default class Key {
 		return false;
 	}
 
-	public async remove(): Promise<typeof keyTable.$inferSelect> {
+	public async remove(): Promise<Pick<typeof keyTable.$inferSelect, 'id'>> {
 		if (!this._keyId) {
 			throw new AppError('Please specify a key id', HttpStatus.BAD_REQUEST);
 		}
 
 		const result = (
-			await db.delete(keyTable).where(eq(keyTable.id, this._keyId)).returning()
+			await db.delete(keyTable).where(eq(keyTable.id, this._keyId)).returning({
+				id: keyTable.id,
+			})
 		)[0];
 
 		return result;

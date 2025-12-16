@@ -8,8 +8,12 @@ const prod = {
 			name: 'keys',
 		},
 		{
-			id: 'b6d842b8-91be-46f7-a340-c4afb1b63a0b',
+			id: 'cecd914d-941b-456e-81e2-c2b743fa25b3',
 			name: 'auth',
+		},
+		{
+			id: 'b6d842b8-91be-46f7-a340-c4afb1b63a0b',
+			name: 'mail',
 		},
 	] satisfies (typeof serviceTable.$inferInsert)[],
 	permissions: [
