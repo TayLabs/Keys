@@ -14,14 +14,9 @@ export const permissionTable = pgTable(
 				onUpdate: 'cascade',
 			})
 			.notNull(),
-		resource: varchar('resource', { length: 128 }).notNull(),
-		action: varchar('action', { length: 128 }).notNull(),
+		key: varchar('key', { length: 128 }).notNull(),
 	},
 	(table) => [
-		unique('service_resource_action_unique_constraint').on(
-			table.serviceId,
-			table.resource,
-			table.action
-		),
+		unique('service_key_unique_constraint').on(table.serviceId, table.key),
 	]
 );

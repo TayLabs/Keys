@@ -3,4 +3,5 @@ service: keys
 permissions:
   - key: 'key.write'
     description: 'Create or delete api keys'
-    allowKey: true
+    scopes:
+      - 'user'

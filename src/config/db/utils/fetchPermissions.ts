@@ -1,18 +1,13 @@
 import { load } from 'js-yaml';
 
 export interface RepoConfig {
-	repo: string;
-	config: Config;
-}
-
-type Config = {
 	service: string;
 	permissions: {
 		key: string;
 		description: string;
-		allowKey: boolean; // Notes whether an api key can be set to access this permission
-	};
-};
+		scopes: ('user' | 'api-key')[]; // Notes whether an api key can be set to access this permission
+	}[];
+}
 
 interface GitHubRepo {
 	name: string;
@@ -98,12 +93,9 @@ export default async function fetchPermissions(): Promise<RepoConfig[]> {
 		);
 		if (!configText) continue;
 
-		const config = load(configText) as Config;
+		const config = load(configText) as RepoConfig;
 
-		results.push({
-			repo: repo.name,
-			config,
-		});
+		results.push(config);
 	}
 
 	return results;

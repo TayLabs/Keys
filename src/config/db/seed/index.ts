@@ -1,37 +1,36 @@
-import fetchPermissions from '@/config/taylab/fetchPermissions';
+import fetchPermissions from '@/config/db/utils/fetchPermissions';
 import { db } from '..';
-import {
-	serviceTable,
-	permissionTable,
-	servicePermissionTable,
-} from '../schema/index.schema';
-import prod from './prod.data';
+import { serviceTable, permissionTable } from '../schema/index.schema';
 
-export default async function seed(options?: { includeTestData: boolean }) {
+export default async function seed() {
 	try {
-		console.log(await fetchPermissions());
+		const config = await fetchPermissions();
 
 		await db.transaction(async (tx) => {
 			// insert service, roles, and permissions
-			await tx.insert(serviceTable).values(prod.services).onConflictDoNothing();
 			await tx
-				.insert(permissionTable)
-				.values(prod.permissions)
-				.returning()
+				.insert(serviceTable)
+				.values(
+					config.map((repo) => ({
+						name: repo.service,
+					}))
+				)
 				.onConflictDoNothing();
 
-			for (const permission of prod.permissions) {
-				const services = prod.services.filter((service) =>
-					permission.services.includes(service.name)
-				);
+			const services = await tx.select().from(serviceTable);
 
-				for (const service of services) {
+			for (const service of services) {
+				const repo = config.find((repo) => repo.service === service.name);
+
+				if (repo) {
 					await tx
-						.insert(servicePermissionTable)
-						.values({
-							serviceId: service.id,
-							permissionId: permission.id,
-						})
+						.insert(permissionTable)
+						.values(
+							repo?.permissions.map((permission) => ({
+								...permission,
+								serviceId: service.id,
+							}))
+						)
 						.onConflictDoNothing();
 				}
 			}
