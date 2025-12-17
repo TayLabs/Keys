@@ -1,3 +1,4 @@
+import fetchPermissions from '@/config/taylab/fetchPermissions';
 import { db } from '..';
 import {
 	serviceTable,
@@ -8,6 +9,8 @@ import prod from './prod.data';
 
 export default async function seed(options?: { includeTestData: boolean }) {
 	try {
+		console.log(await fetchPermissions());
+
 		await db.transaction(async (tx) => {
 			// insert service, roles, and permissions
 			await tx.insert(serviceTable).values(prod.services).onConflictDoNothing();
