@@ -95,7 +95,12 @@ export default async function fetchPermissions(): Promise<RepoConfig[]> {
 
 		const config = load(configText) as RepoConfig;
 
-		results.push(config);
+		results.push({
+			service: config.service,
+			permissions: config.permissions.filter((permission) =>
+				permission.scopes?.includes('api-key')
+			),
+		});
 	}
 
 	return results;

@@ -15,6 +15,20 @@
       "when": 1765757727783,
       "tag": "0001_careful_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766022894266,
+      "tag": "0002_white_zuras",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766023173135,
+      "tag": "0003_hard_vance_astro",
+      "breakpoints": true
     }
   ]
 }

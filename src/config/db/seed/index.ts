@@ -22,7 +22,7 @@ export default async function seed() {
 			for (const service of services) {
 				const repo = config.find((repo) => repo.service === service.name);
 
-				if (repo) {
+				if (repo?.permissions && repo.permissions.length > 0) {
 					await tx
 						.insert(permissionTable)
 						.values(
