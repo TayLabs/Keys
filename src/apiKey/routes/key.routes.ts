@@ -10,17 +10,17 @@ import { authenticate } from '@/config/auth';
 const keyRouter = Router({ mergeParams: true });
 
 keyRouter.post(
-	'/',
-	authenticate({ allow: ['key.write'] }),
-	validateParams(createParamSchema),
-	create
+  '/',
+  authenticate({ allow: ['key.write'] }),
+  validateParams(createParamSchema),
+  create
 );
 keyRouter.post('/verify', validateParams(verifyParamSchema), verify);
 keyRouter.delete(
-	'/:keyId',
-	authenticate({ allow: ['key.write'] }),
-	validateParams(removeParamSchema),
-	remove
+  '/:keyId',
+  authenticate({ allow: ['key.write'] }),
+  validateParams(removeParamSchema),
+  remove
 );
 
 export default keyRouter;
