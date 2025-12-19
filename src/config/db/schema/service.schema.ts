@@ -4,7 +4,7 @@ import { pgTable } from 'drizzle-orm/pg-core';
 import { UUID } from 'node:crypto';
 
 export const serviceTable = pgTable('services', {
-  id: uuid('id').$type<UUID>().primaryKey().defaultRandom(),
-  name: varchar('name', { length: 128 }).notNull(),
-  imported: boolean('imoprted').default(false),
+	id: uuid('id').$type<UUID>().primaryKey().defaultRandom(),
+	name: varchar('name', { length: 128 }).notNull(),
+	isExternal: boolean('is_external').notNull().default(false),
 });

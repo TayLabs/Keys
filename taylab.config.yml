@@ -5,3 +5,11 @@ permissions:
     description: 'Create or delete api keys'
     scopes:
       - 'user'
+  - key: 'service.write'
+    description: 'Create/delete services'
+    scopes:
+      - 'user'
+  - key: 'service.read'
+    description: 'Read services'
+    scopes:
+      - 'user'
