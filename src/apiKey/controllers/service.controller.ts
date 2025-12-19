@@ -8,6 +8,11 @@ import {
 import HttpStatus from '@/types/HttpStatus.enum';
 import type { GetReqParams, GetResBody } from '../dto/service/get.dto';
 import type { GetAllResBody } from '../dto/service/getAll.dto';
+import type {
+	UpdateReqBody,
+	UpdateReqParams,
+	UpdateResBody,
+} from '../dto/service/update.dto';
 
 export const getAll = controller<{}, GetAllResBody>(async (req, res, _next) => {
 	const services = await Service.getAll();
@@ -36,6 +41,19 @@ export const get = controller<{}, GetResBody, GetReqParams>(
 export const register = controller<RegisterReqBody, RegisterResBody>(
 	async (req, res, _next) => {
 		const service = await Service.register(req.body);
+
+		res.status(HttpStatus.CREATED).json({
+			success: true,
+			data: {
+				service,
+			},
+		});
+	}
+);
+
+export const update = controller<UpdateReqBody, UpdateResBody, UpdateReqParams>(
+	async (req, res, _next) => {
+		const service = await new Service(req.params.serviceId).update(req.body);
 
 		res.status(HttpStatus.CREATED).json({
 			success: true,

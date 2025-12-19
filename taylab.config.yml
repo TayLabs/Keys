@@ -1,6 +1,10 @@
 service: keys
 
 permissions:
+  - key: 'key.read'
+    description: 'Read api keys'
+    scopes:
+      - 'user'
   - key: 'key.write'
     description: 'Create or delete api keys'
     scopes:

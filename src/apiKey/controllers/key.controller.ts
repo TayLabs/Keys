@@ -1,7 +1,11 @@
 import { controller } from '@/middleware/controller.middleware';
 import HttpStatus from '@/types/HttpStatus.enum';
 import Key from '../services/Key.service';
-import type { CreateReqParams, CreateResBody } from '../dto/key/create.dto';
+import type {
+	CreateReqBody,
+	CreateReqParams,
+	CreateResBody,
+} from '../dto/key/create.dto';
 import type {
 	VerifyReqBody,
 	VerifyReqParams,
@@ -9,16 +13,32 @@ import type {
 } from '../dto/key/verify.dto';
 import type { RemoveReqParams, RemoveResBody } from '../dto/key/remove.dto';
 import AppError from '@/types/AppError';
+import type { GetAllReqParams, GetAllResBody } from '../dto/key/getAll.dto';
 
-export const create = controller<undefined, CreateResBody, CreateReqParams>(
-	async (req, res, _next) => {
-		const { key, keyRecord } = await new Key(req.params.serviceId).create();
+export const getAll = controller<undefined, GetAllResBody, GetAllReqParams>(
+	async (req, res, next) => {
+		const keys = await new Key(req.params.serviceId).getAll();
 
 		res.status(HttpStatus.OK).json({
 			success: true,
 			data: {
-				key,
-				apiKeyId: keyRecord.id,
+				keys,
+			},
+		});
+	}
+);
+
+export const create = controller<CreateReqBody, CreateResBody, CreateReqParams>(
+	async (req, res, _next) => {
+		const { key, keyRecord } = await new Key(req.params.serviceId).create(
+			req.body
+		);
+
+		res.status(HttpStatus.OK).json({
+			success: true,
+			data: {
+				key: keyRecord,
+				apiKey: key,
 			},
 		});
 	}
