@@ -1,0 +1,1 @@
+ALTER TABLE "keys" ADD COLUMN "name" varchar(128) NOT NULL;
