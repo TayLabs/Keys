@@ -36,6 +36,13 @@
       "when": 1766162931349,
       "tag": "0004_loose_dormammu",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766175427453,
+      "tag": "0005_lame_stingray",
+      "breakpoints": true
     }
   ]
 }
