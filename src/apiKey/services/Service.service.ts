@@ -1,6 +1,6 @@
 import { type UUID } from 'node:crypto';
 import { db } from '@/config/db';
-import { and, DrizzleQueryError, eq, or } from 'drizzle-orm';
+import { and, DrizzleQueryError, eq, or, sql } from 'drizzle-orm';
 import AppError from '@/types/AppError';
 import HttpStatus from '@/types/HttpStatus.enum';
 import { Service as ServiceType } from '../interfaces/Service.interface';
@@ -17,6 +17,8 @@ export default class Service {
 
 	public static async getAll(): Promise<ServiceType[]> {
 		const services = await db.select().from(serviceTable);
+
+		if (services.length < 1) return [];
 
 		const permissions = await db
 			.select()
@@ -45,6 +47,12 @@ export default class Service {
 				.where(eq(serviceTable.id, this._serviceId))
 		)[0];
 
+		if (!service)
+			throw new AppError(
+				'Service with that id does not exist',
+				HttpStatus.NOT_FOUND
+			);
+
 		const permissions = await db
 			.select()
 			.from(permissionTable)
@@ -58,13 +66,9 @@ export default class Service {
 		permissions,
 	}: {
 		service: string;
-		permissions: { key: string; description: string; scopes: string[] }[];
+		permissions: { key: string; description?: string }[];
 	}): Promise<ServiceType> {
 		try {
-			const filteredPermissions = permissions.filter((permission) =>
-				permission.scopes.includes('api-key')
-			);
-
 			let serviceRecord: ServiceType & { permissions: Permission[] };
 			await db.transaction(async (tx) => {
 				// insert service, roles, and permissions
@@ -75,11 +79,11 @@ export default class Service {
 						.returning()
 				)[0] as any;
 
-				if (filteredPermissions && filteredPermissions.length > 0) {
+				if (permissions && permissions.length > 0) {
 					serviceRecord.permissions = await tx
 						.insert(permissionTable)
 						.values(
-							filteredPermissions.map((permission) => ({
+							permissions.map((permission) => ({
 								...permission,
 								serviceId: serviceRecord.id,
 							}))
@@ -115,14 +119,10 @@ export default class Service {
 		service,
 		permissions,
 	}: {
-		service: string;
-		permissions: { key: string; description: string; scopes: string[] }[];
+		service?: string;
+		permissions?: { key: string; description?: string }[];
 	}): Promise<ServiceType> {
 		try {
-			const filteredPermissions = permissions.filter((permission) =>
-				permission.scopes.includes('api-key')
-			);
-
 			let serviceRecord: ServiceType & { permissions: Permission[] };
 			await db.transaction(async (tx) => {
 				// insert service, roles, and permissions
@@ -146,16 +146,24 @@ export default class Service {
 					);
 				}
 
-				if (filteredPermissions && filteredPermissions.length > 0) {
+				if (permissions && permissions.length > 0) {
 					await tx
 						.insert(permissionTable)
 						.values(
-							filteredPermissions.map((permission) => ({
+							permissions.map((permission) => ({
 								...permission,
 								serviceId: serviceRecord.id,
 							}))
 						)
-						.onConflictDoNothing();
+						.onConflictDoUpdate({
+							target: permissionTable.id,
+							set: {
+								key: sql.raw(`excluded.${permissionTable.key.name}`),
+								description: sql.raw(
+									`excluded.${permissionTable.description.name}`
+								),
+							},
+						});
 				}
 
 				const allPermissions = await tx
@@ -165,7 +173,7 @@ export default class Service {
 
 				const oldPermissions = allPermissions.filter(
 					(existing) =>
-						!permissions.find((permission) => permission.key === existing.key)
+						!permissions?.find((permission) => permission.key === existing.key)
 				);
 
 				if (oldPermissions.length > 0) {

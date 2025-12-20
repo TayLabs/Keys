@@ -13,8 +13,7 @@ const registerBodySchema = z.object({
 				.string('Must be a valid string')
 				.min(2, 'Permission name is too short')
 				.max(128, 'Permission name is too long'),
-			description: z.string('Must be a valid string'),
-			scopes: z.array(z.string('Must be a valid string')),
+			description: z.string('Must be a valid string').optional(),
 		})
 	),
 });

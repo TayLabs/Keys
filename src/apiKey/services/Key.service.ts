@@ -127,31 +127,29 @@ export default class Key {
 			.select(getTableColumns(keyTable))
 			.from(keyTable);
 
-		const permissions = await db
-			.select({
-				key: permissionTable.key,
-				keyId: keyPermissionTable.keyId,
-			})
-			.from(permissionTable)
-			.innerJoin(
-				keyPermissionTable,
-				eq(permissionTable.id, keyPermissionTable.permissionId)
-			)
-			.where(
-				or(...keyRecords.map((key) => eq(keyPermissionTable.keyId, key.id)))
-			);
-
 		for (const keyRecord of keyRecords) {
 			if (keyRecord.expiresAt >= new Date()) {
 				if (await verifyAsync(keyRecord.keyHash, key)) {
-					const filtered = permissions.filter(
-						(permission) => permission.keyId === keyRecord.id
-					);
+					const permissions = await db
+						.select({
+							key: permissionTable.key,
+						})
+						.from(permissionTable)
+						.innerJoin(
+							keyPermissionTable,
+							eq(permissionTable.id, keyPermissionTable.permissionId)
+						)
+						.where(eq(keyPermissionTable.keyId, keyRecord.id));
 
-					// Check if the key has permissions attached within the scopes passed in via the request
-					if (filtered.reduce((_, val) => scopes.includes(val.key), false)) {
+					// Check if the key has permissions matchingi the scopes provided
+					if (permissions.reduce((_, val) => scopes.includes(val.key), false)) {
 						delete (keyRecord as any).keyHash;
 						return keyRecord;
+					} else {
+						throw new AppError(
+							'The key does not have permisisons to view this route',
+							HttpStatus.FORBIDDEN
+						);
 					}
 				}
 			}
