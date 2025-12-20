@@ -81,9 +81,7 @@ export const verify = controller<VerifyReqBody, VerifyResBody, VerifyReqParams>(
 			throw new AppError('Invalid service name', HttpStatus.NOT_FOUND);
 		}
 
-		if (!(await new Key(serviceRecord.id).verify(req.body.key))) {
-			throw new AppError('Invalid Api Key', HttpStatus.UNAUTHORIZED);
-		}
+		await new Key(serviceRecord.id).verify(req.body);
 
 		res.status(HttpStatus.OK).json({
 			success: true,

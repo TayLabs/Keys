@@ -2,7 +2,7 @@ import { randomBytes, type UUID } from 'node:crypto';
 import { hashAsync, verifyAsync } from '../utils/hash.util';
 import { keyTable } from '@/config/db/schema/key.schema';
 import { db } from '@/config/db';
-import { and, DrizzleQueryError, eq } from 'drizzle-orm';
+import { and, DrizzleQueryError, eq, or } from 'drizzle-orm';
 import AppError from '@/types/AppError';
 import HttpStatus from '@/types/HttpStatus.enum';
 import parseTTL from '@/apiKey/utils/parseTTL.utils';
@@ -10,6 +10,8 @@ import env from '@/types/env';
 import { DatabaseError } from 'pg';
 import type { Key as KeyType } from '../interfaces/Key.interface';
 import { getTableColumns } from 'drizzle-orm';
+import { keyPermissionTable } from '@/config/db/schema/keyPermission.schema';
+import { permissionTable } from '@/config/db/schema/permission.schema';
 
 const { keyHash: _keyHashColumn, ...keyColumns } = getTableColumns(keyTable);
 
@@ -31,7 +33,13 @@ export default class Key {
 		return results;
 	}
 
-	public async create({ name }: { name: string }): Promise<{
+	public async create({
+		name,
+		permissions,
+	}: {
+		name: string;
+		permissions: UUID[];
+	}): Promise<{
 		key: string;
 		keyRecord: KeyType;
 	}> {
@@ -53,6 +61,13 @@ export default class Key {
 					})
 					.returning(keyColumns)
 			)[0];
+
+			await db.insert(keyPermissionTable).values(
+				permissions.map((permission) => ({
+					permissionId: permission,
+					keyId: keyRecord.id,
+				}))
+			);
 
 			return {
 				key,
@@ -96,17 +111,48 @@ export default class Key {
 				.returning(keyColumns)
 		)[0];
 
+		// Could loop over and redo permissions, but it's better security practice not to allow a token's permissions to change once created
+
 		return result;
 	}
 
-	public async verify(key: string): Promise<KeyType> {
-		const keyRecords = await db.select().from(keyTable);
+	public async verify({
+		key,
+		scopes,
+	}: {
+		key: string;
+		scopes: string[];
+	}): Promise<KeyType> {
+		const keyRecords = await db
+			.select(getTableColumns(keyTable))
+			.from(keyTable);
+
+		const permissions = await db
+			.select({
+				key: permissionTable.key,
+				keyId: keyPermissionTable.keyId,
+			})
+			.from(permissionTable)
+			.innerJoin(
+				keyPermissionTable,
+				eq(permissionTable.id, keyPermissionTable.permissionId)
+			)
+			.where(
+				or(...keyRecords.map((key) => eq(keyPermissionTable.keyId, key.id)))
+			);
 
 		for (const keyRecord of keyRecords) {
 			if (keyRecord.expiresAt >= new Date()) {
 				if (await verifyAsync(keyRecord.keyHash, key)) {
-					delete (keyRecord as any).keyHash;
-					return keyRecord;
+					const filtered = permissions.filter(
+						(permission) => permission.keyId === keyRecord.id
+					);
+
+					// Check if the key has permissions attached within the scopes passed in via the request
+					if (filtered.reduce((_, val) => scopes.includes(val.key), false)) {
+						delete (keyRecord as any).keyHash;
+						return keyRecord;
+					}
 				}
 			}
 		}

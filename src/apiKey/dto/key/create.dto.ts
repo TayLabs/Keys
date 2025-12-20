@@ -12,6 +12,10 @@ const createBodySchema = z.object({
 		.string('Must be a valid string')
 		.min(1, 'Name is too short')
 		.max(128, 'Name is too long'),
+	permissions: z.array(
+		z.uuid('Invalid uuid').transform((str) => str as UUID),
+		'Invalid array of strings'
+	),
 });
 
 type CreateReqParams = z.infer<typeof createParamSchema>;
