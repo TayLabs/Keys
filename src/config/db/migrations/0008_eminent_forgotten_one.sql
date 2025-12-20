@@ -1,0 +1,1 @@
+ALTER TABLE "keys" ADD CONSTRAINT "keys_name_unique" UNIQUE("name");
