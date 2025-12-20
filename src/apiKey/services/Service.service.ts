@@ -1,5 +1,4 @@
 import { type UUID } from 'node:crypto';
-import { keyTable } from '@/config/db/schema/key.schema';
 import { db } from '@/config/db';
 import { and, DrizzleQueryError, eq, or } from 'drizzle-orm';
 import AppError from '@/types/AppError';
@@ -7,6 +6,7 @@ import HttpStatus from '@/types/HttpStatus.enum';
 import { Service as ServiceType } from '../interfaces/Service.interface';
 import { permissionTable, serviceTable } from '@/config/db/schema/index.schema';
 import { DatabaseError } from 'pg';
+import { Permission } from '../interfaces/Permission.interface';
 
 export default class Service {
 	private _serviceId: UUID;
@@ -16,20 +16,41 @@ export default class Service {
 	}
 
 	public static async getAll(): Promise<ServiceType[]> {
-		const result = await db.select().from(serviceTable);
+		const services = await db.select().from(serviceTable);
 
-		return result;
+		const permissions = await db
+			.select()
+			.from(permissionTable)
+			.where(
+				or(
+					...services.map((service) =>
+						eq(permissionTable.serviceId, service.id)
+					)
+				)
+			);
+
+		return services.map((service) => ({
+			...service,
+			permissions: permissions.filter(
+				(permission) => permission.serviceId === service.id
+			),
+		}));
 	}
 
 	public async get(): Promise<ServiceType> {
-		const result = (
+		const service = (
 			await db
 				.select()
 				.from(serviceTable)
 				.where(eq(serviceTable.id, this._serviceId))
 		)[0];
 
-		return result;
+		const permissions = await db
+			.select()
+			.from(permissionTable)
+			.where(eq(permissionTable.serviceId, service.id));
+
+		return { ...service, permissions };
 	}
 
 	public static async register({
@@ -44,7 +65,7 @@ export default class Service {
 				permission.scopes.includes('api-key')
 			);
 
-			let serviceRecord: typeof serviceTable.$inferSelect;
+			let serviceRecord: ServiceType & { permissions: Permission[] };
 			await db.transaction(async (tx) => {
 				// insert service, roles, and permissions
 				serviceRecord = (
@@ -52,10 +73,10 @@ export default class Service {
 						.insert(serviceTable)
 						.values({ name: service, isExternal: true })
 						.returning()
-				)[0];
+				)[0] as any;
 
 				if (filteredPermissions && filteredPermissions.length > 0) {
-					await tx
+					serviceRecord.permissions = await tx
 						.insert(permissionTable)
 						.values(
 							filteredPermissions.map((permission) => ({
@@ -63,7 +84,7 @@ export default class Service {
 								serviceId: serviceRecord.id,
 							}))
 						)
-						.onConflictDoNothing();
+						.returning();
 				}
 			});
 
@@ -102,7 +123,7 @@ export default class Service {
 				permission.scopes.includes('api-key')
 			);
 
-			let serviceRecord: typeof serviceTable.$inferSelect;
+			let serviceRecord: ServiceType & { permissions: Permission[] };
 			await db.transaction(async (tx) => {
 				// insert service, roles, and permissions
 				serviceRecord = (
@@ -116,7 +137,7 @@ export default class Service {
 							)
 						)
 						.returning()
-				)[0];
+				)[0] as any;
 
 				if (!serviceRecord) {
 					throw new AppError(
@@ -158,6 +179,11 @@ export default class Service {
 							)
 						);
 				}
+
+				serviceRecord.permissions = await tx
+					.select()
+					.from(permissionTable)
+					.where(eq(permissionTable.serviceId, this._serviceId));
 			});
 
 			return serviceRecord!;
