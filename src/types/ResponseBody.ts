@@ -1,4 +1,4 @@
-export type ResponseBody<T = Record<string, any>> =
+export type ResponseBody<T = Record<string, any> | undefined> =
 	| {
 			success: true;
 			data: T;

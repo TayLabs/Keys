@@ -2,7 +2,7 @@ import { randomBytes, type UUID } from 'node:crypto';
 import { hashAsync, verifyAsync } from '../utils/hash.util';
 import { keyTable } from '@/config/db/schema/key.schema';
 import { db } from '@/config/db';
-import { DrizzleQueryError, eq } from 'drizzle-orm';
+import { and, DrizzleQueryError, eq } from 'drizzle-orm';
 import AppError from '@/types/AppError';
 import HttpStatus from '@/types/HttpStatus.enum';
 import parseTTL from '@/apiKey/utils/parseTTL.utils';
@@ -80,6 +80,23 @@ export default class Key {
 				throw err;
 			}
 		}
+	}
+
+	public async update({ name }: { name: string }): Promise<KeyType> {
+		const result = (
+			await db
+				.update(keyTable)
+				.set({ name })
+				.where(
+					and(
+						eq(keyTable.serviceId, this._serviceId),
+						eq(keyTable.id, this._keyId!)
+					)
+				)
+				.returning(keyColumns)
+		)[0];
+
+		return result;
 	}
 
 	public async verify(key: string): Promise<KeyType> {

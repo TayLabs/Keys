@@ -1,11 +1,18 @@
 import { Router } from 'express';
-import { create, getAll, remove, verify } from '../controllers/key.controller';
-import { createParamSchema } from '../dto/key/create.dto';
-import { validateParams } from '@/middleware/validate.middleware';
+import {
+	create,
+	getAll,
+	remove,
+	update,
+	verify,
+} from '../controllers/key.controller';
+import { createBodySchema, createParamSchema } from '../dto/key/create.dto';
+import { validateBody, validateParams } from '@/middleware/validate.middleware';
 import { removeParamSchema } from '../dto/key/remove.dto';
 import { verifyParamSchema } from '../dto/key/verify.dto';
 import { authenticate } from '@/config/auth';
 import { getAllParamsSchema } from '../dto/key/getAll.dto';
+import { updateBodySchema, updateParamSchema } from '../dto/key/update.dto';
 
 // /services/:serviceId/keys
 const keyRouter = Router({ mergeParams: true });
@@ -20,9 +27,16 @@ keyRouter.post(
 	'/',
 	authenticate({ allow: ['key.write'] }),
 	validateParams(createParamSchema),
+	validateBody(createBodySchema),
 	create
 );
-keyRouter.post('/verify', validateParams(verifyParamSchema), verify);
+keyRouter.patch(
+	'/:keyId',
+	authenticate({ allow: ['key.write'] }),
+	validateParams(updateParamSchema),
+	validateBody(updateBodySchema),
+	update
+);
 keyRouter.delete(
 	'/:keyId',
 	authenticate({ allow: ['key.write'] }),

@@ -14,6 +14,14 @@ import type {
 import type { RemoveReqParams, RemoveResBody } from '../dto/key/remove.dto';
 import AppError from '@/types/AppError';
 import type { GetAllReqParams, GetAllResBody } from '../dto/key/getAll.dto';
+import {
+	UpdateReqBody,
+	UpdateReqParams,
+	UpdateResBody,
+} from '../dto/key/update.dto';
+import { serviceTable } from '@/config/db/schema/service.schema';
+import { eq } from 'drizzle-orm';
+import { db } from '@/config/db';
 
 export const getAll = controller<undefined, GetAllResBody, GetAllReqParams>(
 	async (req, res, next) => {
@@ -44,15 +52,42 @@ export const create = controller<CreateReqBody, CreateResBody, CreateReqParams>(
 	}
 );
 
+export const update = controller<UpdateReqBody, UpdateResBody, UpdateReqParams>(
+	async (req, res, _next) => {
+		const keyRecord = await new Key(
+			req.params.serviceId,
+			req.params.keyId
+		).update(req.body);
+
+		res.status(HttpStatus.OK).json({
+			success: true,
+			data: {
+				key: keyRecord,
+			},
+		});
+	}
+);
+
 export const verify = controller<VerifyReqBody, VerifyResBody, VerifyReqParams>(
 	async (req, res, _next) => {
-		if (!(await new Key(req.params.serviceId).verify(req.body.key))) {
+		const serviceRecord = (
+			await db
+				.select()
+				.from(serviceTable)
+				.where(eq(serviceTable.name, req.params.serviceName))
+		)[0];
+
+		if (!serviceRecord) {
+			throw new AppError('Invalid service name', HttpStatus.NOT_FOUND);
+		}
+
+		if (!(await new Key(serviceRecord.id).verify(req.body.key))) {
 			throw new AppError('Invalid Api Key', HttpStatus.UNAUTHORIZED);
 		}
 
 		res.status(HttpStatus.OK).json({
 			success: true,
-			data: {},
+			data: undefined,
 		});
 	}
 );
