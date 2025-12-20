@@ -11,7 +11,7 @@ export const keyTable = pgTable('keys', {
 			onUpdate: 'cascade',
 		})
 		.notNull(),
-	name: varchar('name', { length: 128 }).notNull(),
+	name: varchar('name', { length: 128 }).notNull().unique(),
 	keyHash: varchar('key_hash', { length: 512 }).notNull(),
 	keyLastFour: varchar('key_last_four', { length: 4 }).notNull(),
 	expiresAt: timestamp('expires_at').notNull(),

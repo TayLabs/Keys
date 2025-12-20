@@ -79,8 +79,8 @@ export default class Key {
 				err.cause instanceof DatabaseError
 			) {
 				switch (err.cause.code) {
-					// case '23505': // unique_violation
-					// 	throw new Error('Unique violation', ); // Should occur as .onConflictUpdate exist
+					case '23505': // unique_violation
+						throw new Error('A service with that name already exist');
 					case '23503': // Foreign key violation
 						throw new AppError('Invalid Service Id', HttpStatus.BAD_REQUEST);
 					case '42P01': // undefined_table
