@@ -10,8 +10,9 @@ RUN npm run build
 FROM node:24-alpine AS production
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/dist/src/config/db/migrations ./src/config/db/migrations
+COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/package*.json ./
+RUN apk add --no-cache curl
 RUN npm install --only=production
 ENV NODE_ENV=production
 CMD ["node", "dist/server.js"]
