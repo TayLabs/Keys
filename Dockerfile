@@ -10,6 +10,7 @@ RUN npm run build
 FROM node:24-alpine AS production
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist/src/config/db/migrations ./src/config/db/migrations
 COPY --from=builder /app/package*.json ./
 RUN npm install --only=production
 ENV NODE_ENV=production

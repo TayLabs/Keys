@@ -22,9 +22,6 @@ pids
 *.seed
 *.pid.lock
 
-# drizzle-orm migration files
-drizzle/
-
 # IDE files
 .vscode/
 .idea/

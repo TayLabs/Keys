@@ -3,8 +3,8 @@ import { db } from '..';
 import path from 'node:path';
 
 export default async function runMigrations() {
-  const migrationsFolder = path.join(__dirname, '../migrations');
-  await migrate(db, { migrationsFolder });
+	const migrationsFolder = path.join(process.cwd(), 'drizzle', 'migrations');
+	await migrate(db, { migrationsFolder });
 
-  console.log('⚒️  Migrations complete');
+	console.log('⚒️  Migrations complete');
 }
