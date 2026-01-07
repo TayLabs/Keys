@@ -156,7 +156,7 @@ export default class Service {
               }))
             )
             .onConflictDoUpdate({
-              target: permissionTable.id,
+              target: [permissionTable.serviceId, permissionTable.key],
               set: {
                 key: sql.raw(`excluded.${permissionTable.key.name}`),
                 description: sql.raw(
