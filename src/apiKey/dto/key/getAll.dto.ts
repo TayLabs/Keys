@@ -4,12 +4,12 @@ import type { UUID } from 'node:crypto';
 import type { Key } from '@/apiKey/interfaces/Key.interface';
 
 const getAllParamsSchema = z.object({
-	serviceId: z.uuid('Invalid UUID').transform((str) => str as UUID),
+  serviceName: z.string('Must be a valid string'),
 });
 
 type GetAllReqParams = z.infer<typeof getAllParamsSchema>;
 type GetAllResBody = ResponseBody<{
-	keys: Key[];
+  keys: Key[];
 }>;
 
 export { getAllParamsSchema, type GetAllReqParams, type GetAllResBody };

@@ -3,14 +3,14 @@ import type { ResponseBody } from '@/types/ResponseBody';
 import type { UUID } from 'node:crypto';
 
 const removeParamsSchema = z.object({
-	serviceId: z.uuid('Invalid UUID').transform((str) => str as UUID),
+  serviceName: z.string('Must be a valid string'),
 });
 
 type RemoveReqParams = z.infer<typeof removeParamsSchema>;
 type RemoveResBody = ResponseBody<{
-	service: {
-		id: UUID;
-	};
+  service: {
+    id: UUID;
+  };
 }>;
 
 export { removeParamsSchema, type RemoveReqParams, type RemoveResBody };

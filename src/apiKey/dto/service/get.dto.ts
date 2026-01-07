@@ -1,15 +1,14 @@
 import z from 'zod';
 import type { ResponseBody } from '@/types/ResponseBody';
-import type { UUID } from 'node:crypto';
 import type { Service } from '@/apiKey/interfaces/Service.interface';
 
 const getParamsSchema = z.object({
-	serviceId: z.uuid('Invalid UUID').transform((str) => str as UUID),
+  serviceName: z.string('Must be a valid string'),
 });
 
 type GetReqParams = z.infer<typeof getParamsSchema>;
 type GetResBody = ResponseBody<{
-	service: Service;
+  service: Service;
 }>;
 
 export { getParamsSchema, type GetReqParams, type GetResBody };
