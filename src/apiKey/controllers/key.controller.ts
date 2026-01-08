@@ -10,15 +10,29 @@ import {
   UpdateReqParams,
   UpdateResBody,
 } from '../dto/key/update.dto';
+import { GetReqParams, GetResBody } from '../dto/key/get.dto';
 
 export const getAll = controller<undefined, GetAllResBody>(
-  async (req, res, next) => {
+  async (_req, res, _next) => {
     const keys = await new Key().getAll();
 
     res.status(HttpStatus.OK).json({
       success: true,
       data: {
         keys,
+      },
+    });
+  }
+);
+
+export const get = controller<undefined, GetResBody, GetReqParams>(
+  async (req, res, _next) => {
+    const key = await new Key(req.params.keyId).get();
+
+    res.status(HttpStatus.OK).json({
+      success: true,
+      data: {
+        key,
       },
     });
   }

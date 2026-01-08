@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import {
   create,
+  get,
   getAll,
   remove,
   update,
   verify,
 } from '../controllers/key.controller';
 import { createBodySchema } from '../dto/key/create.dto';
+import { getParamSchema } from '../dto/key/get.dto';
 import { validateBody, validateParams } from '@/middleware/validate.middleware';
 import { removeParamSchema } from '../dto/key/remove.dto';
 import { verifyBodySchema } from '../dto/key/verify.dto';
@@ -17,6 +19,12 @@ import { updateBodySchema, updateParamSchema } from '../dto/key/update.dto';
 const keyRouter = Router({ mergeParams: true });
 
 keyRouter.get('/', authenticate({ allow: ['key.read'] }), getAll);
+keyRouter.get(
+  '/:keyId',
+  authenticate({ allow: ['key.read'] }),
+  validateParams(getParamSchema),
+  get
+);
 keyRouter.post('/verify', validateBody(verifyBodySchema), verify);
 keyRouter.post(
   '/',

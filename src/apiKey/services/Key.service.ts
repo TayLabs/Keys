@@ -48,6 +48,29 @@ export default class Key {
     }));
   }
 
+  public async get(): Promise<KeyType> {
+    const key = (
+      await db.select().from(keyTable).where(eq(keyTable.id, this._keyId!))
+    )[0];
+
+    if (!key)
+      throw new AppError(
+        'Key with that id does not exist',
+        HttpStatus.NOT_FOUND
+      );
+
+    const permissions = await db
+      .select(getTableColumns(permissionTable))
+      .from(permissionTable)
+      .innerJoin(
+        keyPermissionTable,
+        eq(permissionTable.id, keyPermissionTable.permissionId)
+      )
+      .where(eq(keyPermissionTable.permissionId, key.id));
+
+    return { ...key, permissions };
+  }
+
   public async create({
     name,
     permissions,
@@ -99,7 +122,7 @@ export default class Key {
               HttpStatus.BAD_REQUEST
             );
           case '23503': // Foreign key violation
-            throw new AppError('Invalid Service Id', HttpStatus.BAD_REQUEST);
+            throw new AppError('Invalid Permission Id', HttpStatus.BAD_REQUEST);
           case '42P01': // undefined_table
             throw new AppError(
               'Database table not found',
