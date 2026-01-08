@@ -102,12 +102,14 @@ export default class Key {
           .returning(keyColumns)
       )[0];
 
-      await db.insert(keyPermissionTable).values(
-        permissions.map((permission) => ({
-          permissionId: permission,
-          keyId: keyRecord.id,
-        }))
-      );
+      if (permissions.length > 0) {
+        await db.insert(keyPermissionTable).values(
+          permissions.map((permission) => ({
+            permissionId: permission,
+            keyId: keyRecord.id,
+          }))
+        );
+      }
 
       return {
         key,
