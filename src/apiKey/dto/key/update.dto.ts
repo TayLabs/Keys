@@ -4,7 +4,6 @@ import type { UUID } from 'node:crypto';
 import { Key } from '@/apiKey/interfaces/Key.interface';
 
 const updateParamSchema = z.object({
-  serviceName: z.string('Must be a valid string'),
   keyId: z.uuid('Must be a valid UUID').transform((str: string) => str as UUID),
 });
 

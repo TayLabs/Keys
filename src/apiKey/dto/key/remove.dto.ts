@@ -3,7 +3,6 @@ import type { ResponseBody } from '@/types/ResponseBody';
 import type { UUID } from 'node:crypto';
 
 const removeParamSchema = z.object({
-  serviceName: z.string('Must be a valid string'),
   keyId: z.uuid('Must be a valid UUID').transform((str: string) => str as UUID),
 });
 

@@ -12,163 +12,170 @@ import type { Key as KeyType } from '../interfaces/Key.interface';
 import { getTableColumns } from 'drizzle-orm';
 import { keyPermissionTable } from '@/config/db/schema/keyPermission.schema';
 import { permissionTable } from '@/config/db/schema/permission.schema';
+import { serviceTable } from '@/config/db/schema/service.schema';
 
 const { keyHash: _keyHashColumn, ...keyColumns } = getTableColumns(keyTable);
 
 export default class Key {
-	private _serviceId: UUID;
-	private _keyId?: UUID;
+  private _keyId?: UUID;
 
-	constructor(serviceId: UUID, keyId?: UUID) {
-		this._serviceId = serviceId;
-		this._keyId = keyId;
-	}
+  constructor(keyId?: UUID) {
+    this._keyId = keyId;
+  }
 
-	public async getAll(): Promise<KeyType[]> {
-		const results = await db
-			.select(keyColumns)
-			.from(keyTable)
-			.where(eq(keyTable.serviceId, this._serviceId));
+  public async getAll(): Promise<KeyType[]> {
+    const results = await db.select(keyColumns).from(keyTable);
 
-		return results;
-	}
+    return results;
+  }
 
-	public async create({
-		name,
-		permissions,
-	}: {
-		name: string;
-		permissions: UUID[];
-	}): Promise<{
-		key: string;
-		keyRecord: KeyType;
-	}> {
-		try {
-			const key = randomBytes(32).toString('hex'); // len: 64
-			const keyHash = await hashAsync(key);
+  public async create({
+    name,
+    permissions,
+  }: {
+    name: string;
+    permissions: UUID[];
+  }): Promise<{
+    key: string;
+    keyRecord: KeyType;
+  }> {
+    try {
+      const key = randomBytes(32).toString('hex'); // len: 64
+      const keyHash = await hashAsync(key);
 
-			const keyRecord = (
-				await db
-					.insert(keyTable)
-					.values({
-						serviceId: this._serviceId,
-						name,
-						keyHash,
-						keyLastFour: key.substring(key.length - 4),
-						expiresAt: new Date(
-							Date.now() + parseTTL(env.API_KEY_TTL).milliseconds
-						),
-					})
-					.returning(keyColumns)
-			)[0];
+      const keyRecord = (
+        await db
+          .insert(keyTable)
+          .values({
+            name,
+            keyHash,
+            keyLastFour: key.substring(key.length - 4),
+            expiresAt: new Date(
+              Date.now() + parseTTL(env.API_KEY_TTL).milliseconds
+            ),
+          })
+          .returning(keyColumns)
+      )[0];
 
-			await db.insert(keyPermissionTable).values(
-				permissions.map((permission) => ({
-					permissionId: permission,
-					keyId: keyRecord.id,
-				}))
-			);
+      await db.insert(keyPermissionTable).values(
+        permissions.map((permission) => ({
+          permissionId: permission,
+          keyId: keyRecord.id,
+        }))
+      );
 
-			return {
-				key,
-				keyRecord,
-			};
-		} catch (err) {
-			if (
-				err instanceof DrizzleQueryError &&
-				err.cause instanceof DatabaseError
-			) {
-				switch (err.cause.code) {
-					case '23505': // unique_violation
-						throw new Error('A key with that name already exist');
-					case '23503': // Foreign key violation
-						throw new AppError('Invalid Service Id', HttpStatus.BAD_REQUEST);
-					case '42P01': // undefined_table
-						throw new AppError(
-							'Database table not found',
-							HttpStatus.INTERNAL_SERVER_ERROR
-						);
-					default:
-						throw err;
-				}
-			} else {
-				throw err;
-			}
-		}
-	}
+      return {
+        key,
+        keyRecord,
+      };
+    } catch (err) {
+      if (
+        err instanceof DrizzleQueryError &&
+        err.cause instanceof DatabaseError
+      ) {
+        switch (err.cause.code) {
+          case '23505': // unique_violation
+            throw new AppError(
+              'A key with that name already exist',
+              HttpStatus.BAD_REQUEST
+            );
+          case '23503': // Foreign key violation
+            throw new AppError('Invalid Service Id', HttpStatus.BAD_REQUEST);
+          case '42P01': // undefined_table
+            throw new AppError(
+              'Database table not found',
+              HttpStatus.INTERNAL_SERVER_ERROR
+            );
+          default:
+            throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
+  }
 
-	public async update({ name }: { name: string }): Promise<KeyType> {
-		const result = (
-			await db
-				.update(keyTable)
-				.set({ name })
-				.where(
-					and(
-						eq(keyTable.serviceId, this._serviceId),
-						eq(keyTable.id, this._keyId!)
-					)
-				)
-				.returning(keyColumns)
-		)[0];
+  public async update({ name }: { name: string }): Promise<KeyType> {
+    const result = (
+      await db
+        .update(keyTable)
+        .set({ name })
+        .where(and(eq(keyTable.id, this._keyId!)))
+        .returning(keyColumns)
+    )[0];
 
-		// Could loop over and redo permissions, but it's better security practice not to allow a token's permissions to change once created
+    // Could loop over and redo permissions, but it's better security practice not to allow a token's permissions to change once created
 
-		return result;
-	}
+    return result;
+  }
 
-	public async verify({
-		key,
-		scopes,
-	}: {
-		key: string;
-		scopes: string[];
-	}): Promise<KeyType> {
-		const keyRecords = await db
-			.select(getTableColumns(keyTable))
-			.from(keyTable);
+  public async verify({
+    key,
+    scopes,
+  }: {
+    key: string;
+    scopes: string[];
+  }): Promise<KeyType> {
+    const keyRecords = await db
+      .select(getTableColumns(keyTable))
+      .from(keyTable);
 
-		for (const keyRecord of keyRecords) {
-			if (keyRecord.expiresAt >= new Date()) {
-				if (await verifyAsync(keyRecord.keyHash, key)) {
-					const permissions = await db
-						.select({
-							key: permissionTable.key,
-						})
-						.from(permissionTable)
-						.innerJoin(
-							keyPermissionTable,
-							eq(permissionTable.id, keyPermissionTable.permissionId)
-						)
-						.where(eq(keyPermissionTable.keyId, keyRecord.id));
+    for (const keyRecord of keyRecords) {
+      if (keyRecord.expiresAt >= new Date()) {
+        if (await verifyAsync(keyRecord.keyHash, key)) {
+          const permissions = await db
+            .selectDistinct({
+              service: serviceTable.name,
+              key: permissionTable.key,
+            })
+            .from(permissionTable)
+            .leftJoin(
+              serviceTable,
+              eq(serviceTable.id, permissionTable.serviceId)
+            )
+            .innerJoin(
+              keyPermissionTable,
+              eq(permissionTable.id, keyPermissionTable.permissionId)
+            )
+            .where(eq(keyPermissionTable.keyId, keyRecord.id));
 
-					// Check if the key has permissions matchingi the scopes provided
-					if (permissions.reduce((_, val) => scopes.includes(val.key), false)) {
-						delete (keyRecord as any).keyHash;
-						return keyRecord;
-					} else {
-						throw new AppError(
-							'The key does not have permisisons to view this route',
-							HttpStatus.FORBIDDEN
-						);
-					}
-				}
-			}
-		}
+          // Check if the key has permissions matchingi the scopes provided
+          console.log(
+            permissions.map((perm) => `${perm.service}:${perm.key}`),
+            scopes
+          );
+          if (
+            permissions.reduce(
+              (_, val) => scopes.includes(`${val.service}:${val.key}`),
+              false
+            )
+          ) {
+            delete (keyRecord as any).keyHash;
+            return keyRecord;
+          } else {
+            throw new AppError(
+              'The key does not have permisisons to view this route',
+              HttpStatus.FORBIDDEN
+            );
+          }
+        }
+      }
+    }
 
-		throw new AppError('Invalid api key', HttpStatus.BAD_REQUEST);
-	}
+    throw new AppError('Invalid api key', HttpStatus.BAD_REQUEST);
+  }
 
-	public async remove(): Promise<Pick<typeof keyTable.$inferSelect, 'id'>> {
-		if (!this._keyId) {
-			throw new AppError('Please specify a key id', HttpStatus.BAD_REQUEST);
-		}
+  public async remove(): Promise<Pick<typeof keyTable.$inferSelect, 'id'>> {
+    if (!this._keyId) {
+      throw new AppError('Please specify a key id', HttpStatus.BAD_REQUEST);
+    }
 
-		const result = (
-			await db.delete(keyTable).where(eq(keyTable.id, this._keyId)).returning({
-				id: keyTable.id,
-			})
-		)[0];
+    const result = (
+      await db.delete(keyTable).where(eq(keyTable.id, this._keyId)).returning({
+        id: keyTable.id,
+      })
+    )[0];
 
-		return result;
-	}
+    return result;
+  }
 }
