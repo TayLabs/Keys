@@ -50,7 +50,10 @@ export default class Key {
 
   public async get(): Promise<KeyType> {
     const key = (
-      await db.select().from(keyTable).where(eq(keyTable.id, this._keyId!))
+      await db
+        .select(keyColumns)
+        .from(keyTable)
+        .where(eq(keyTable.id, this._keyId!))
     )[0];
 
     if (!key)
@@ -66,7 +69,7 @@ export default class Key {
         keyPermissionTable,
         eq(permissionTable.id, keyPermissionTable.permissionId)
       )
-      .where(eq(keyPermissionTable.permissionId, key.id));
+      .where(eq(keyPermissionTable.keyId, key.id));
 
     return { ...key, permissions };
   }
@@ -137,18 +140,91 @@ export default class Key {
     }
   }
 
-  public async update({ name }: { name: string }): Promise<KeyType> {
-    const result = (
-      await db
-        .update(keyTable)
-        .set({ name })
-        .where(and(eq(keyTable.id, this._keyId!)))
-        .returning(keyColumns)
-    )[0];
+  public async update({
+    name,
+    permissions,
+  }: {
+    name: string;
+    permissions: UUID[];
+  }): Promise<KeyType> {
+    try {
+      let result: KeyType;
+      await db.transaction(async (tx) => {
+        result = (
+          await tx
+            .update(keyTable)
+            .set({ name })
+            .where(eq(keyTable.id, this._keyId!))
+            .returning()
+        )[0] as any;
 
-    // Could loop over and redo permissions, but it's better security practice not to allow a token's permissions to change once created
+        if (permissions && permissions.length > 0) {
+          await tx
+            .insert(keyPermissionTable)
+            .values(
+              permissions.map((permissionId) => ({
+                permissionId,
+                keyId: this._keyId!,
+              }))
+            )
+            .onConflictDoNothing();
+        }
 
-    return result;
+        const allPermissions = await tx
+          .select()
+          .from(keyPermissionTable)
+          .where(eq(keyPermissionTable.keyId, this._keyId!));
+
+        const oldPermissions = allPermissions.filter(
+          (existing) =>
+            !permissions?.find(
+              (permissionId) => permissionId === existing.permissionId
+            )
+        );
+
+        if (oldPermissions.length > 0) {
+          await tx
+            .delete(keyPermissionTable)
+            .where(
+              or(
+                ...oldPermissions.map((permission) =>
+                  eq(keyPermissionTable.permissionId, permission.permissionId!)
+                )
+              )
+            );
+        }
+
+        result.permissions = await tx
+          .select(getTableColumns(permissionTable))
+          .from(permissionTable)
+          .innerJoin(
+            keyPermissionTable,
+            eq(keyPermissionTable.permissionId, permissionTable.id)
+          )
+          .where(eq(keyPermissionTable.keyId, this._keyId!));
+      });
+
+      return result!;
+    } catch (err) {
+      if (
+        err instanceof DrizzleQueryError &&
+        err.cause instanceof DatabaseError
+      ) {
+        switch (err.cause.code) {
+          case '23505': // unique_violation
+            throw new Error('A key with that name already exist');
+          case '42P01': // undefined_table
+            throw new AppError(
+              'Database table not found',
+              HttpStatus.INTERNAL_SERVER_ERROR
+            );
+          default:
+            throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
   }
 
   public async verify({

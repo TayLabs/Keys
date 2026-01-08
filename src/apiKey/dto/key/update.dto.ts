@@ -12,6 +12,10 @@ const updateBodySchema = z.object({
     .string('Must be a valid string')
     .min(1, 'Name is too short')
     .max(128, 'Name is too long'),
+  permissions: z.array(
+    z.uuid('Invalid uuid').transform((str: string) => str as UUID),
+    'Invalid array of strings'
+  ),
 });
 
 type UpdateReqParams = z.infer<typeof updateParamSchema>;
