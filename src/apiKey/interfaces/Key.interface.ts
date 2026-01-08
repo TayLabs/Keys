@@ -1,4 +1,5 @@
 import type { UUID } from 'node:crypto';
+import type { Permission } from './Permission.interface';
 
 export type Key = {
   id: UUID;
@@ -6,4 +7,5 @@ export type Key = {
   keyLastFour: string;
   expiresAt: Date;
   createdAt: Date;
+  permissions?: Permission[];
 };

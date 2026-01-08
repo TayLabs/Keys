@@ -24,9 +24,28 @@ export default class Key {
   }
 
   public async getAll(): Promise<KeyType[]> {
-    const results = await db.select(keyColumns).from(keyTable);
+    const keys = await db.select(keyColumns).from(keyTable);
 
-    return results;
+    if (keys.length < 1) return [];
+
+    const permissions = await db
+      .select({
+        ...getTableColumns(permissionTable),
+        keyId: keyPermissionTable.keyId,
+      })
+      .from(permissionTable)
+      .innerJoin(
+        keyPermissionTable,
+        eq(keyPermissionTable.permissionId, permissionTable.id)
+      )
+      .where(or(...keys.map((key) => eq(keyPermissionTable.keyId, key.id))));
+
+    return keys.map((key) => ({
+      ...key,
+      permissions: permissions.filter(
+        (permission) => permission.keyId === key.id
+      ),
+    }));
   }
 
   public async create({
