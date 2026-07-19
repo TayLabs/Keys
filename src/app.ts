@@ -9,6 +9,8 @@ import { apiKeyRouter } from './apiKey/routes/index.routes';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // CORS
 app.use(
 	cors({
