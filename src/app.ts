@@ -15,7 +15,7 @@ app.set('trust proxy', 1);
 // CORS
 app.use(
 	cors({
-		origin: env.HOST_URI,
+		origin: env.FRONTEND_URI,
 		credentials: true,
 	})
 );
