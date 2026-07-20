@@ -31,7 +31,8 @@ const envSchema = z.object({
 		.string()
 		.regex(/^\d+(h|d)$/, 'Must be a valid length of days (suffix: d)')
 		.default('30d'),
-	ACCESS_TOKEN_SECRET: z
+	HOST_URI: z.string('Must be a valid string of characters'),
+  ACCESS_TOKEN_SECRET: z
 		.string('Must be a valid string of characters')
 		.min(6, 'Must be at least 6 characters long')
 		.max(24, 'Must be at most 24 characters long'),

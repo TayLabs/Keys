@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import { globalRateLimit } from './middleware/rateLimiters/index.limiter';
 import { apiKeyRouter } from './apiKey/routes/index.routes';
+import env from './types/env';
 
 const app = express();
 
@@ -14,7 +15,7 @@ app.set('trust proxy', 1);
 // CORS
 app.use(
 	cors({
-		origin: true,
+		origin: env.HOST_URI,
 		credentials: true,
 	})
 );
